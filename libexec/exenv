@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ -z "$EXENV_ROOT" ]; then
+  export EXENV_ROOT="${HOME}/.exenv"
+fi
+
+# --- HELPER FUNCTIONS ---
+
+exenv_rehash() {
+  echo "Rebuilding shims..."
+  # Clean the shims directory
+  rm -rf "${EXENV_ROOT}/shims"
+  mkdir -p "${EXENV_ROOT}/shims"
+
+  for version_path in "${EXENV_ROOT}/versions"/*; do
+    if [ -d "${version_path}/bin" ]; then
+      for executable in "${version_path}/bin"/*; do
+        local fname
+        fname=$(basename "$executable")
+        # Create the shim file
+        echo "#!/usr/bin/env bash" > "${EXENV_ROOT}/shims/${fname}"
+        echo "exec exenv exec ${fname} \"\$@\"" >> "${EXENV_ROOT}/shims/${fname}"
+        chmod +x "${EXENV_ROOT}/shims/${fname}"
+      done
+    fi
+  done
+  echo "Shims rebuilt."
+}
+
+# --- COMMANDS ---
+
+case "$1" in
+  install)
+    VERSION="$2"
+    if [ -z "$VERSION" ]; then
+      echo "Error: Please provide a version to install. Ex: exenv install 1.16.2"
+      exit 1
+    fi
+
+    INSTALL_PATH="${EXENV_ROOT}/versions/${VERSION}"
+    if [ -d "$INSTALL_PATH" ]; then
+      echo "Version ${VERSION} is already installed."
+      exit 0
+    fi
+
+    echo "Downloading Elixir v${VERSION}..."
+    # We use the pre-compiled packages with Erlang/OTP already included to simplify things.
+    # The filename pattern has changed over time. Let's try the new pattern first.
+    FILENAME="elixir-otp-26.zip" # Adjust OTP version as needed
+    URL="https://github.com/elixir-lang/elixir/releases/download/v${VERSION}/${FILENAME}"
+
+    if command -v curl >/dev/null; then
+      curl -L -o "/tmp/${FILENAME}" "$URL"
+    elif command -v wget >/dev/null; then
+      wget -O "/tmp/${FILENAME}" "$URL"
+    else
+      echo "Error: 'curl' or 'wget' is required to download files."
+      exit 1
+    fi
+
+    echo "Installing Elixir v${VERSION} to ${INSTALL_PATH}..."
+    mkdir -p "$INSTALL_PATH"
+    unzip -q "/tmp/${FILENAME}" -d "$INSTALL_PATH"
+    rm "/tmp/${FILENAME}"
+
+    echo "Elixir v${VERSION} installed successfully."
+    exenv_rehash
+    ;;
+
+  versions)
+    echo "Installed versions:"
+    ls -1 "${EXENV_ROOT}/versions"
+    ;;
+
+  global)
+    VERSION="$2"
+    if [ -z "$VERSION" ]; then
+      echo "Error: Please provide a version to set as global."
+      exit 1
+    fi
+    echo "Setting global version to ${VERSION}..."
+    echo "$VERSION" > "${EXENV_ROOT}/version"
+    ;;
+
+  local)
+    VERSION="$2"
+    if [ -z "$VERSION" ]; then
+      echo "Error: Please provide a version to set as local."
+      exit 1
+    fi
+    echo "Setting local version to ${VERSION}..."
+    echo "$VERSION" > ".elixir-version"
+    ;;
+
+  rehash)
+    exenv_rehash
+    ;;
+
+  exec)
+    COMMAND_NAME="$2"
+    shift 2
+
+    # 1. Search for .elixir-version in the current directory and parent directories
+    VERSION_FILE=$(find . -maxdepth 5 -name ".elixir-version" -print -quit)
+    if [ -n "$VERSION_FILE" ]; then
+      VERSION=$(cat "$VERSION_FILE")
+    # 2. If not found, use the global version
+    elif [ -f "${EXENV_ROOT}/version" ]; then
+      VERSION=$(cat "${EXENV_ROOT}/version")
+    fi
+
+    if [ -z "$VERSION" ]; then
+      echo "No Elixir version has been set. Use 'exenv global <version>'."
+      exit 1
+    fi
+
+    REAL_EXECUTABLE="${EXENV_ROOT}/versions/${VERSION}/bin/${COMMAND_NAME}"
+    if [ -f "$REAL_EXECUTABLE" ]; then
+      exec "$REAL_EXECUTABLE" "$@"
+    else
+      echo "Error: Command '${COMMAND_NAME}' not found in version ${VERSION}."
+      exit 1
+    fi
+    ;;
+
+  *)
+    echo "Usage: exenv <command> [<options>]"
+    echo "Commands:"
+    echo "  install <version>    - Installs a version of Elixir"
+    echo "  versions             - Lists installed versions"
+    echo "  global <version>     - Sets the global version"
+    echo "  local <version>      - Sets the local version (for the current directory)"
+    echo "  rehash               - Rebuilds the shims"
+    ;;
+esac

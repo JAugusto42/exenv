@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Find the real path of the script.
+find_script_dir() {
+  local SOURCE="${BASH_SOURCE[0]}"
+  while [ -h "$SOURCE" ]; do
+    local DIR
+    DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  done
+  cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd
+}
+
+# Absolute path of the script.
+SCRIPT_DIR="$(find_script_dir)"
+
+# Absolute path of the root directory.
+export EXENV_ROOT
+EXENV_ROOT="$(dirname "$SCRIPT_DIR")"
+
+exec "${EXENV_ROOT}/libexec/exenv" "$@"
