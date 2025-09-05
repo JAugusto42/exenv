@@ -36,7 +36,7 @@ _For other systems, please use your respective package manager to install the `e
 1.  **Clone the repository:**
 
     ```bash
-    git clone [https://github.com/JAugusto42/exenv.git](https://github.com/JAugusto42/exenv.git)
+    git clone https://github.com/JAugusto42/exenv.git
     ```
 
 2.  **Run the installer:**
