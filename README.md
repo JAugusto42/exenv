@@ -34,10 +34,9 @@ _For other systems, please use your respective package manager to install the `e
 ## Installation
 
 1.  **Clone the repository:**
-    Replace `YOUR_USERNAME` with your actual GitHub username.
 
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/exenv.git](https://github.com/YOUR_USERNAME/exenv.git)
+    git clone [https://github.com/JAugusto42/exenv.git](https://github.com/JAugusto42/exenv.git)
     ```
 
 2.  **Run the installer:**
