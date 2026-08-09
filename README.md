@@ -50,6 +50,12 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
     ./install.sh
     ```
 
+    Or install directly without cloning the repository:
+
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/JAugusto42/exenv/main/install.sh | bash
+    ```
+
 3.  **Configure your Shell:**
     Add the following lines to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
 
