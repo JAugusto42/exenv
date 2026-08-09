@@ -206,6 +206,11 @@ case "$1" in
       exit 1
     fi
 
+    if ! command_exists erl; then
+      echo "Error: Erlang/OTP is required to run Elixir. Elixir archives are built against OTP but do not bundle the Erlang runtime. Install Erlang and ensure 'erl' is on your PATH."
+      exit 1
+    fi
+
     INSTALL_PATH="${EXENV_ROOT}/versions/${VERSION}"
     if [ -d "$INSTALL_PATH" ]; then
       echo "Version ${VERSION} is already installed."

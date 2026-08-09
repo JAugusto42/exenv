@@ -9,8 +9,9 @@
 Minimum requirements:
 - `curl` or `wget`
 - `unzip`
+- `erlang` / `erl`
 
-On most systems, `curl` and `unzip` are already available by default.
+On most systems, `curl` and `unzip` are already available by default. Elixir release archives are built against a specific OTP version, but they do not include the Erlang runtime itself. You still need Erlang/OTP installed and available on `PATH`.
 
 If you do not have these tools installed, use your system package manager to install them.
 
@@ -109,6 +110,7 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
   - Downloads the correct `elixir-otp-XX.zip` archive for the requested version.
   - Unpacks it into `~/.exenv/versions/<version>`.
   - Automatically rebuilds shims after installation.
+  - Requires Erlang/OTP to be installed and available on `PATH`.
   - Does not activate the version. Use `exenv global <version>` or `exenv local <version>` after install.
 
 - `exenv install --list` / `exenv list-remote`
