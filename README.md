@@ -39,7 +39,7 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
 
 1. Install via Curl
 
-  ```bash
+    ```bash
     curl -fsSL https://raw.githubusercontent.com/JAugusto42/exenv/main/install.sh | bash
     ```
 
