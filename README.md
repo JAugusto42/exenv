@@ -4,17 +4,17 @@
 
 ## Requirements
 
-`exenv` installs Elixir using the official prebuilt OTP bundles from the Elixir releases. Isso significa que não é necessário ter Erlang/OTP instalado antes de usar o `install`.
+`exenv` installs Elixir using the official prebuilt OTP bundles from the Elixir releases. This means you do not need Erlang/OTP installed before using `install`.
 
-Requisitos mínimos:
-- `curl` ou `wget`
+Minimum requirements:
+- `curl` or `wget`
 - `unzip`
 
-Na maioria dos sistemas, `curl` e `unzip` já estão disponíveis por padrão.
+On most systems, `curl` and `unzip` are already available by default.
 
-Se você não tiver essas ferramentas instaladas, use o gerenciador de pacotes do seu sistema para instalá-las.
+If you do not have these tools installed, use your system package manager to install them.
 
-#### macOS (usando Homebrew)
+#### macOS (using Homebrew)
 
 ```bash
 brew install curl unzip
