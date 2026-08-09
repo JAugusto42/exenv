@@ -68,6 +68,9 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
     ```
 
 4.  **Restart your terminal** for the changes to take effect.
+    ```bash
+    source ~/.zshrc # ~/.bashrc ...
+    ```
 
 ## Usage
 
