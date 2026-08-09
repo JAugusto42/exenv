@@ -357,7 +357,7 @@ case "$1" in
     echo "  install <version>    - Installs a version of Elixir"
     echo "  install --list       - Lists available remote Elixir versions"
     echo "  versions             - Lists installed versions"
-    echo "  list-remote          - Lists available remote Elixir versions"
+    echo "  list-remote          - Alias for 'install --list'"
     echo "  uninstall <version>  - Removes an installed Elixir version"
     echo "  global <version>     - Sets the global version"
     echo "  local <version>      - Sets the local version (for the current directory)"
