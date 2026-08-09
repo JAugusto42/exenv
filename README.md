@@ -4,32 +4,36 @@
 
 ## Requirements
 
-Elixir requires an active Erlang/OTP installation to run.
+`exenv` installs Elixir using the official prebuilt OTP bundles from the Elixir releases. Isso significa que não é necessário ter Erlang/OTP instalado antes de usar o `install`.
 
-`exenv` manages Elixir versions, but it **does not** install Erlang for you. You must install Erlang on your system separately before using any Elixir version.
+Requisitos mínimos:
+- `curl` ou `wget`
+- `unzip`
 
-You can install Erlang using your system's package manager.
+Na maioria dos sistemas, `curl` e `unzip` já estão disponíveis por padrão.
 
-#### macOS (using Homebrew)
+Se você não tiver essas ferramentas instaladas, use o gerenciador de pacotes do seu sistema para instalá-las.
 
-```bash
-brew install erlang
-```
-
-### Arch Linux (using Pacman)
+#### macOS (usando Homebrew)
 
 ```bash
-sudo pacman -S erlang
+brew install curl unzip
 ```
 
-#### Ubuntu/Debian (using APT)
+#### Ubuntu/Debian (APT)
 
 ```bash
 sudo apt-get update
-sudo apt-get install erlang
+sudo apt-get install curl unzip
 ```
 
-_For other systems, please use your respective package manager to install the `erlang` package._
+#### Arch Linux (Pacman)
+
+```bash
+sudo pacman -S curl unzip
+```
+
+_O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto para a versão solicitada._
 
 ## Installation
 
@@ -59,28 +63,139 @@ _For other systems, please use your respective package manager to install the `e
 
 ## Usage
 
-- **Install a version:**
+### Version installation
 
-  ```bash
-  exenv install 1.17.2
-  ```
+| Command | Description |
+| --- | --- |
+| `exenv install <version>` | Installs a specific Elixir version using a prebuilt OTP bundle with Erlang/OTP included. |
+| `exenv install --list` | Lists available remote Elixir versions from GitHub releases. |
+| `exenv list-remote` | Same as `install --list`: lists available remote versions. |
 
-- **List installed versions:**
+### Version selection
 
-  ```bash
-  exenv versions
-  ```
+| Command | Description |
+| --- | --- |
+| `exenv global <version>` | Sets the global Elixir version in `${EXENV_ROOT}/version`. |
+| `exenv local <version>` | Sets the local project version in `.elixir-version` in the current directory. |
+| `exenv version` | Shows the currently active Elixir version, resolving local first and global second. |
+| `exenv versions` | Lists installed Elixir versions in `${EXENV_ROOT}/versions`. |
 
-- **Set the global version:**
-  This version will be used by default in any shell.
+### Management
 
-  ```bash
-  exenv global 1.17.2
-  ```
+| Command | Description |
+| --- | --- |
+| `exenv uninstall <version>` | Removes an installed version and rebuilds shims. |
+| `exenv rehash` | Rebuilds shim scripts from installed versions. Use after manual version directory changes. |
 
-- **Set a local version (for a project):**
-  This will create a `.elixir-version` file in your current directory. This version will be automatically used whenever you are inside this directory.
-  ```bash
-  cd /path/to/your/project
-  exenv local 1.16.3
-  ```
+### Execution and diagnostics
+
+| Command | Description |
+| --- | --- |
+| `exenv exec <command> [args]` | Runs a command from the active version without relying on the shim. |
+| `exenv which <command>` | Prints the actual executable path for the active version. |
+
+### Command details
+
+- `exenv install <version>`
+  - Downloads the correct `elixir-otp-XX.zip` archive for the requested version.
+  - Unpacks it into `~/.exenv/versions/<version>`.
+  - Automatically rebuilds shims after installation.
+
+- `exenv install --list` / `exenv list-remote`
+  - Queries GitHub releases for available Elixir versions.
+  - Use this to discover exact version strings before installing.
+
+- `exenv versions`
+  - Shows all versions currently installed under `~/.exenv/versions`.
+
+- `exenv global <version>`
+  - Sets the default Elixir version for all shells.
+  - It writes the version string to `~/.exenv/version`.
+
+- `exenv local <version>`
+  - Creates a `.elixir-version` file in the current working directory.
+  - `exenv` resolves this file by searching parent directories, so project subfolders inherit the version.
+
+- `exenv uninstall <version>`
+  - Deletes the installed version directory and rebuilds shims.
+  - Use this to clean up versions you no longer need.
+
+- `exenv version`
+  - Prints the active version, preferring a local `.elixir-version` file and falling back to the global version.
+
+- `exenv which <command>`
+  - Prints the full path to a command executable under the active version's `bin/` directory.
+  - Useful for debugging `PATH` or checking which Elixir executable is being used.
+
+- `exenv rehash`
+  - Rebuilds shim scripts in `~/.exenv/shims`.
+  - This is normally automatic after `install` and `uninstall`, but useful if you manually change version directories.
+
+- `exenv exec <command> [args]`
+  - Executes the named command from the active Elixir version directory.
+  - Useful when calling commands directly from `exenv` without relying on shell shims.
+
+### Examples
+
+Install a specific version:
+```bash
+exenv install 1.20.3
+```
+
+List remote versions:
+```bash
+exenv install --list
+```
+
+or:
+```bash
+exenv list-remote
+```
+
+Set the global version:
+```bash
+exenv global 1.20.3
+```
+
+Set a local project version:
+```bash
+cd /path/to/your/project
+exenv local 1.20.3
+```
+
+Show the currently active version:
+```bash
+exenv version
+```
+
+Show the path to the active `elixir` executable:
+```bash
+exenv which elixir
+```
+
+Run a command directly with the active version:
+```bash
+exenv exec elixir -v
+```
+
+Remove an installed version:
+```bash
+exenv uninstall 1.20.3
+```
+
+Rebuild shims manually:
+```bash
+exenv rehash
+```
+
+## Release Notes
+
+### Implemented in this version
+
+- `exenv install <version>` installs prebuilt Elixir OTP bundles automatically.
+- `exenv install --list` and `exenv list-remote` show available remote versions.
+- `exenv uninstall <version>` removes an installed version and rebuilds shims.
+- `exenv which <command>` shows the command path for the active version.
+- `exenv version` shows the currently active version using local or global config.
+- `exenv local <version>` resolves `.elixir-version` by searching parent directories.
+- Updated documentation to reflect self-contained OTP bundle installs.
