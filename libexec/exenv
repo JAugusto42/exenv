@@ -124,7 +124,7 @@ get_active_version() {
 }
 
 list_remote_versions() {
-  local url="https://api.github.com/repos/elixir-lang/elixir/releases?per_page=100"
+  local url="https://api.github.com/repos/elixir-lang/elixir/tags?per_page=100"
   local tmpfile
 
   if ! command_exists curl && ! command_exists wget; then
@@ -132,19 +132,19 @@ list_remote_versions() {
     return 1
   fi
 
-  tmpfile="$(mktemp /tmp/exenv-releases.XXXXXX.json)"
+  tmpfile="$(mktemp /tmp/exenv-releases.XXXXXX)"
   trap 'rm -f "$tmpfile"' EXIT
 
   if ! download_file "$url" "$tmpfile"; then
-    echo "Error: Failed to fetch remote release information."
+    echo "Error: Failed to fetch remote tag information."
     return 1
   fi
 
-  grep -o '"tag_name"[[:space:]]*:[[:space:]]*"[^"]*"' "$tmpfile" \
+  grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' "$tmpfile" \
     | sed -E 's/.*"([^"]+)"/\1/' \
     | sed 's/^v//' \
-    | sort -u \
-    | tail -n 100
+    | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -u
 
   trap - EXIT
 }
