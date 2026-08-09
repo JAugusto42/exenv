@@ -62,7 +62,7 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
     Add the following line to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
 
     ```bash
-    eval "$(exenv init -)"
+    eval "$("$HOME/.exenv/bin/exenv" init -)"
     ```
 
 4.  **Restart your terminal** for the changes to take effect.

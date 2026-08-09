@@ -20,6 +20,6 @@ echo "Installation completed successfully!"
 echo
 echo 'Add the following line to your shell configuration file:'
 echo
-echo 'eval "$(exenv init -)"'
+echo 'eval "$("$HOME/.exenv/bin/exenv" init -)"'
 echo
 echo 'Then restart your terminal or source your shell config file to activate exenv.'
