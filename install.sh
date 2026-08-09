@@ -18,10 +18,8 @@ cp "${script_dir}/libexec/exenv" "${INSTALL_DIR}/libexec/"
 echo
 echo "Installation completed successfully!"
 echo
-echo 'Add the following lines to your shell configuration file:'
+echo 'Add the following line to your shell configuration file:'
 echo
-echo 'export EXENV_ROOT="$HOME/.exenv"'
-echo 'export PATH="$EXENV_ROOT/bin:$PATH"'
-echo 'export PATH="$EXENV_ROOT/shims:$PATH"'
+echo 'eval "$(exenv init -)"'
 echo
-echo 'After that, restart your terminal for the changes to take effect.'
+echo 'Then restart your terminal or source your shell config file to activate exenv.'
