@@ -76,8 +76,8 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
 
 | Command | Description |
 | --- | --- |
-| `exenv install <version>` | Installs a specific Elixir version using a prebuilt OTP bundle with Erlang/OTP included. |
-| `exenv install --list` | Lists available remote Elixir versions from GitHub releases. |
+| `exenv install <version>` | Installs a specific Elixir version using a prebuilt OTP bundle with Erlang/OTP included. Does not set the active version. |
+| `exenv install --list` | Lists available remote Elixir versions from GitHub tags. |
 | `exenv list-remote` | Same as `install --list`: lists available remote versions. |
 
 ### Version selection
@@ -109,9 +109,10 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
   - Downloads the correct `elixir-otp-XX.zip` archive for the requested version.
   - Unpacks it into `~/.exenv/versions/<version>`.
   - Automatically rebuilds shims after installation.
+  - Does not activate the version. Use `exenv global <version>` or `exenv local <version>` after install.
 
 - `exenv install --list` / `exenv list-remote`
-  - Queries GitHub releases for available Elixir versions.
+  - Queries GitHub tags for available Elixir versions.
   - Use this to discover exact version strings before installing.
 
 - `exenv versions`

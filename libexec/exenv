@@ -239,6 +239,7 @@ case "$1" in
     fi
 
     echo "Elixir v${VERSION} installed successfully."
+    echo "Run 'exenv global ${VERSION}' or 'exenv local ${VERSION}' to activate this version."
     exenv_rehash
     ;;
 
