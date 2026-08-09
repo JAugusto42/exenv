@@ -18,21 +18,46 @@ If you do not have these tools installed, use your system package manager to ins
 #### macOS (using Homebrew)
 
 ```bash
-brew install curl unzip
+brew install curl unzip erlang
 ```
 
 #### Ubuntu/Debian (APT)
 
 ```bash
 sudo apt-get update
-sudo apt-get install curl unzip
+sudo apt-get install curl unzip erlang
 ```
 
 #### Arch Linux (Pacman)
 
 ```bash
-sudo pacman -S curl unzip
+sudo pacman -S curl unzip erlang
 ```
+
+#### Official Erlang/OTP installers or source builds
+
+If you prefer the official Erlang installers, follow the instructions on the Erlang website:
+
+```bash
+# https://www.erlang.org/downloads
+```
+
+For macOS, you can also use the Erlang Solutions package repository:
+
+```bash
+brew install erlang
+```
+
+For Ubuntu/Debian, add the Erlang Solutions repository and install Erlang:
+
+```bash
+wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+sudo dpkg -i erlang-solutions_2.0_all.deb
+sudo apt-get update
+sudo apt-get install erlang
+```
+
+For Arch, the official repository already provides Erlang packages via `pacman`.
 
 _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto para a versão solicitada._
 
