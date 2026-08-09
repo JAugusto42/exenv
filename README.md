@@ -59,17 +59,15 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
     ```
 
 3.  **Configure your Shell:**
-    Add the following lines to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
+    Add the following line to your shell configuration file (`~/.bashrc` or `~/.zshrc`):
 
     ```bash
-    export EXENV_ROOT="$HOME/.exenv"
-    export PATH="$EXENV_ROOT/bin:$PATH"
-    export PATH="$EXENV_ROOT/shims:$PATH"
+    eval "$(exenv init -)"
     ```
 
 4.  **Restart your terminal** for the changes to take effect.
     ```bash
-    source ~/.zshrc # ~/.bashrc ...
+    source ~/.zshrc # or source ~/.bashrc
     ```
 
 ## Usage

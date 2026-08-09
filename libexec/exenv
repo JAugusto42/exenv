@@ -81,6 +81,34 @@ find_elixir_archive() {
   return 1
 }
 
+detect_shell() {
+  if [ -n "$ZSH_VERSION" ]; then
+    printf '%s' "zsh"
+  elif [ -n "$BASH_VERSION" ]; then
+    printf '%s' "bash"
+  elif [ -n "$KSH_VERSION" ]; then
+    printf '%s' "sh"
+  elif [ -n "$SHELL" ]; then
+    case "${SHELL##*/}" in
+      bash|zsh|sh)
+        printf '%s' "${SHELL##*/}"
+        ;;
+      *)
+        printf '%s' "sh"
+        ;;
+    esac
+  else
+    printf '%s' "sh"
+  fi
+}
+
+output_init_script() {
+  cat <<'EOF'
+export EXENV_ROOT="${HOME}/.exenv"
+export PATH="$EXENV_ROOT/bin:$EXENV_ROOT/shims:$PATH"
+EOF
+}
+
 get_active_version() {
   local version
   local version_file
@@ -143,6 +171,24 @@ exenv_rehash() {
 # --- COMMANDS ---
 
 case "$1" in
+  init)
+    if [ "$2" = "-" ] || [ -z "$2" ]; then
+      shell_name="$(detect_shell)"
+    else
+      shell_name="$2"
+    fi
+
+    case "$shell_name" in
+      bash|zsh|sh)
+        output_init_script
+        ;;
+      *)
+        echo "Error: Unsupported shell '$shell_name'. Supported: bash, zsh, sh." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+
   install)
     if [ "$2" = "--list" ] || [ "$2" = "-l" ]; then
       list_remote_versions
@@ -307,6 +353,7 @@ case "$1" in
   *)
     echo "Usage: exenv <command> [<options>]"
     echo "Commands:"
+    echo "  init [-|bash|zsh|sh] - Outputs shell init code for exenv"
     echo "  install <version>    - Installs a version of Elixir"
     echo "  install --list       - Lists available remote Elixir versions"
     echo "  versions             - Lists installed versions"
