@@ -531,12 +531,8 @@ case "$1" in
     COMMAND_NAME="$2"
     shift 2
 
-    VERSION_FILE="$(find_local_version_file)"
-    if [ -n "$VERSION_FILE" ]; then
-      VERSION="$(cat "$VERSION_FILE")"
-    elif [ -f "${EXENV_ROOT}/version" ]; then
-      VERSION="$(cat "${EXENV_ROOT}/version")"
-    fi
+    # Use helper which safely resolves local or global version
+    VERSION="$(get_active_version)"
 
     if [ -z "$VERSION" ]; then
       echo "No Elixir version has been set. Use 'exenv global <version>'."

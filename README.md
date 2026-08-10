@@ -106,6 +106,26 @@ _O `exenv` agora busca automaticamente o arquivo `elixir-otp-XX.zip` correto par
 | `exenv install --list` | Lists available remote Elixir versions from GitHub tags. |
 | `exenv list-remote` | Same as `install --list`: lists available remote versions. |
 
+### Erlang management
+
+`exenv` can also manage Erlang/OTP versions and compile them from source. This allows you to install multiple OTP versions under `~/.exenv/versions/erlang/<version>` and have `exenv init` automatically put the active Erlang `bin/` directory on your `PATH`.
+
+| Command | Description |
+| --- | --- |
+| `exenv erlang --list` | Lists available Erlang/OTP versions from the upstream tags. |
+| `exenv erlang install <version>` | Downloads, builds, and installs the specified Erlang/OTP version under `~/.exenv/versions/erlang/<version>`. Requires `make`, `gcc`, and `tar`. |
+| `exenv erlang global <version>` | Sets the global Erlang version used by shells (writes to `${EXENV_ROOT}/erlang-version`). |
+| `exenv erlang local <version>` | Sets a local Erlang version for the current directory (creates `.erlang-version`). |
+| `exenv erlang uninstall <version>` | Removes a previously installed Erlang version from `~/.exenv/versions/erlang`. |
+
+Examples:
+
+```bash
+exenv erlang --list
+exenv erlang install 29.0
+exenv erlang global 29.0
+```
+
 ### Version selection
 
 | Command | Description |
