@@ -531,6 +531,26 @@ case "$1" in
     COMMAND_NAME="$2"
     shift 2
 
+    # If the command looks like an Erlang runtime tool, prefer the managed
+    # Erlang installation (or fall back to the system one). This avoids the
+    # shim calling back into `exenv exec` for `erl` and similar commands.
+    case "$COMMAND_NAME" in
+      erl|erlc|epmd|run_erl|to_erl|dialyzer|typer|escript|ct_run)
+        ERLANG_VERSION="$(get_active_erlang_version)" || true
+        if [ -n "$ERLANG_VERSION" ] && [ -x "${EXENV_ROOT}/versions/erlang/${ERLANG_VERSION}/bin/${COMMAND_NAME}" ]; then
+          exec "${EXENV_ROOT}/versions/erlang/${ERLANG_VERSION}/bin/${COMMAND_NAME}" "$@"
+        fi
+
+        # Fall back to system-provided runtime if available
+        if command_exists "$COMMAND_NAME"; then
+          exec "$(command -v "$COMMAND_NAME")" "$@"
+        fi
+
+        echo "Error: Erlang command '${COMMAND_NAME}' not found. Install with 'exenv erlang install <version>' or ensure system ${COMMAND_NAME} is available." >&2
+        exit 1
+        ;;
+    esac
+
     # Use helper which safely resolves local or global version
     VERSION="$(get_active_version)"
 
