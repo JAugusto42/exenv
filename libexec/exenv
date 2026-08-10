@@ -408,8 +408,32 @@ case "$1" in
 
   uninstall)
     VERSION="$2"
+    # Support full cleanup: 'exenv uninstall all' or 'exenv uninstall --all'
+    if [ "$VERSION" = "all" ] || [ "$VERSION" = "--all" ]; then
+      if [ -t 0 ]; then
+        printf "This will remove all installed Elixir and Erlang versions and clean exenv files under %s. Continue? [y/N]: " "$EXENV_ROOT"
+        read -r CONFIRM
+        case "$CONFIRM" in
+          y|Y|yes|YES)
+            ;;
+          *)
+            echo "Aborted. No files were removed."
+            exit 1
+            ;;
+        esac
+      fi
+
+      echo "Removing all versions and cleaning exenv state under ${EXENV_ROOT}..."
+      rm -rf "${EXENV_ROOT}/versions" "${EXENV_ROOT}/shims" "${EXENV_ROOT}/version" "${EXENV_ROOT}/erlang-version"
+      mkdir -p "${EXENV_ROOT}/versions"
+      mkdir -p "${EXENV_ROOT}/shims"
+      echo "All versions and state removed. Run 'exenv rehash' to rebuild shims (shims directory recreated)."
+      exenv_rehash || true
+      exit 0
+    fi
+
     if [ -z "$VERSION" ]; then
-      echo "Error: Please provide a version to uninstall. Ex: exenv uninstall 1.16.2"
+      echo "Error: Please provide a version to uninstall. Ex: exenv uninstall 1.16.2 or exenv uninstall all"
       exit 1
     fi
 
