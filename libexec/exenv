@@ -105,6 +105,24 @@ detect_shell() {
 output_init_script() {
   cat <<'EOF'
 export EXENV_ROOT="${HOME}/.exenv"
+
+_exenv_find_local_erlang_version_file() {
+  local dir="$PWD"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/.erlang-version" ]; then
+      printf '%s' "$dir/.erlang-version"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+}
+
+if version_file="$(_exenv_find_local_erlang_version_file)" && [ -n "$version_file" ]; then
+  export PATH="$EXENV_ROOT/versions/erlang/$(cat "$version_file")/bin:$PATH"
+elif [ -f "$EXENV_ROOT/erlang-version" ]; then
+  export PATH="$EXENV_ROOT/versions/erlang/$(cat "$EXENV_ROOT/erlang-version")/bin:$PATH"
+fi
+
 export PATH="$EXENV_ROOT/bin:$EXENV_ROOT/shims:$PATH"
 EOF
 }
@@ -121,6 +139,47 @@ get_active_version() {
   fi
 
   printf '%s' "$version"
+}
+
+find_local_erlang_version_file() {
+  local dir="$PWD"
+
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/.erlang-version" ]; then
+      printf '%s' "$dir/.erlang-version"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+
+  return 1
+}
+
+get_active_erlang_version() {
+  local version_file
+
+  version_file="$(find_local_erlang_version_file)" || true
+  if [ -n "$version_file" ]; then
+    cat "$version_file"
+    return 0
+  elif [ -f "${EXENV_ROOT}/erlang-version" ]; then
+    cat "${EXENV_ROOT}/erlang-version"
+    return 0
+  fi
+  return 1
+}
+
+find_erlang_archive() {
+  local version="$1"
+  local filename="otp_src_${version}.tar.gz"
+  local url="https://github.com/erlang/otp/releases/download/OTP-${version}/${filename}"
+
+  if check_url_exists "$url"; then
+    printf '%s' "$filename"
+    return 0
+  fi
+
+  return 1
 }
 
 list_remote_versions() {
@@ -149,22 +208,91 @@ list_remote_versions() {
   trap - EXIT
 }
 
+list_remote_erlang_versions() {
+  local url="https://api.github.com/repos/erlang/otp/tags?per_page=200"
+  local tmpfile
+
+  if ! command_exists curl && ! command_exists wget; then
+    echo "Error: 'curl' or 'wget' is required to fetch remote version data."
+    return 1
+  fi
+
+  tmpfile="$(mktemp /tmp/exenv-erlang-releases.XXXXXX)"
+  trap 'rm -f "$tmpfile"' EXIT
+
+  if ! download_file "$url" "$tmpfile"; then
+    echo "Error: Failed to fetch remote Erlang tag information."
+    return 1
+  fi
+
+  grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' "$tmpfile" \
+    | sed -E 's/.*"([^"]+)"/\1/' \
+    | sed 's/^OTP-//' \
+    | grep -E '^[0-9]+(\.[0-9]+)*$' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n -u
+
+  trap - EXIT
+}
+
+build_erlang_version() {
+  local version="$1"
+  local install_path="$2"
+  local archive_name
+  local url
+  local tmpdir
+
+  if ! command_exists tar || ! command_exists make || ! command_exists gcc; then
+    echo "Error: Building Erlang requires tar, make, and gcc."
+    return 1
+  fi
+
+  archive_name="$(find_erlang_archive "$version")"
+  if [ -z "$archive_name" ]; then
+    echo "Error: Could not find source archive for Erlang ${version}."
+    return 1
+  fi
+
+  url="https://github.com/erlang/otp/releases/download/OTP-${version}/${archive_name}"
+  tmpdir="$(mktemp -d /tmp/exenv-erangl-src.XXXXXX)"
+  trap 'rm -rf "$tmpdir"' EXIT
+
+  if ! download_file "$url" "$tmpdir/$archive_name"; then
+    echo "Error: Failed to download ${url}."
+    return 1
+  fi
+
+  tar -xzf "$tmpdir/$archive_name" -C "$tmpdir"
+  if [ ! -d "$tmpdir/otp_src_${version}" ]; then
+    echo "Error: Extracted Erlang source directory not found."
+    return 1
+  fi
+
+  cd "$tmpdir/otp_src_${version}"
+  ./configure --prefix="$install_path"
+
+  local jobs
+  jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1)"
+  make -j "$jobs"
+  make install
+  cd - >/dev/null
+
+  rm -rf "$tmpdir"
+  trap - EXIT
+}
+
 exenv_rehash() {
   echo "Rebuilding shims..."
   rm -rf "${EXENV_ROOT}/shims"
   mkdir -p "${EXENV_ROOT}/shims"
 
-  for version_path in "${EXENV_ROOT}/versions"/*; do
-    if [ -d "${version_path}/bin" ]; then
-      for executable in "${version_path}/bin"/*; do
-        local fname
-        fname=$(basename "$executable")
-        echo "#!/usr/bin/env bash" > "${EXENV_ROOT}/shims/${fname}"
-        echo "exec exenv exec ${fname} \"\$@\"" >> "${EXENV_ROOT}/shims/${fname}"
-        chmod +x "${EXENV_ROOT}/shims/${fname}"
-      done
-    fi
+  find "${EXENV_ROOT}/versions" -path '*/bin/*' -type f -print0 | while IFS= read -r -d '' executable; do
+    local fname
+    fname=$(basename "$executable")
+    echo "#!/usr/bin/env bash" > "${EXENV_ROOT}/shims/${fname}"
+    echo "exec exenv exec ${fname} \"\$@\"" >> "${EXENV_ROOT}/shims/${fname}"
+    chmod +x "${EXENV_ROOT}/shims/${fname}"
   done
+
   echo "Shims rebuilt."
 }
 
@@ -206,8 +334,8 @@ case "$1" in
       exit 1
     fi
 
-    if ! command_exists erl; then
-      echo "Error: Erlang/OTP is required to run Elixir. Elixir archives are built against OTP but do not bundle the Erlang runtime. Install Erlang and ensure 'erl' is on your PATH."
+    if ! command_exists erl && [ ! -d "${EXENV_ROOT}/versions/erlang" ]; then
+      echo "Error: Erlang/OTP is required to run Elixir. Install an Erlang version with 'exenv erlang install <version>' or ensure 'erl' is on your PATH."
       exit 1
     fi
 
@@ -331,6 +459,74 @@ case "$1" in
     exenv_rehash
     ;;
 
+  erlang)
+    if [ "$2" = "--list" ] || [ "$2" = "-l" ]; then
+      list_remote_erlang_versions
+      exit $?
+    fi
+
+    if [ "$2" = "install" ]; then
+      ERLANG_VERSION="$3"
+      if [ -z "$ERLANG_VERSION" ]; then
+        echo "Error: Please provide a version to install. Ex: exenv erlang install 29.0"
+        exit 1
+      fi
+
+      INSTALL_PATH="${EXENV_ROOT}/versions/erlang/${ERLANG_VERSION}"
+      if [ -d "$INSTALL_PATH" ]; then
+        echo "Erlang ${ERLANG_VERSION} is already installed."
+        exit 0
+      fi
+
+      echo "Building and installing Erlang/OTP ${ERLANG_VERSION}..."
+      build_erlang_version "$ERLANG_VERSION" "$INSTALL_PATH"
+      echo "Erlang/OTP ${ERLANG_VERSION} installed to ${INSTALL_PATH}."
+      exit $?
+    fi
+
+    if [ "$2" = "global" ]; then
+      ERLANG_VERSION="$3"
+      if [ -z "$ERLANG_VERSION" ]; then
+        echo "Error: Please provide a version to set as global. Ex: exenv erlang global 29.0"
+        exit 1
+      fi
+      echo "$ERLANG_VERSION" > "${EXENV_ROOT}/erlang-version"
+      echo "Erlang global version set to ${ERLANG_VERSION}."
+      exit 0
+    fi
+
+    if [ "$2" = "local" ]; then
+      ERLANG_VERSION="$3"
+      if [ -z "$ERLANG_VERSION" ]; then
+        echo "Error: Please provide a version to set as local. Ex: exenv erlang local 29.0"
+        exit 1
+      fi
+      echo "$ERLANG_VERSION" > ".erlang-version"
+      echo "Erlang local version set to ${ERLANG_VERSION}."
+      exit 0
+    fi
+
+    if [ "$2" = "uninstall" ]; then
+      ERLANG_VERSION="$3"
+      if [ -z "$ERLANG_VERSION" ]; then
+        echo "Error: Please provide a version to uninstall. Ex: exenv erlang uninstall 29.0"
+        exit 1
+      fi
+      INSTALL_PATH="${EXENV_ROOT}/versions/erlang/${ERLANG_VERSION}"
+      if [ ! -d "$INSTALL_PATH" ]; then
+        echo "Erlang version ${ERLANG_VERSION} is not installed."
+        exit 1
+      fi
+      rm -rf "$INSTALL_PATH"
+      echo "Erlang version ${ERLANG_VERSION} removed."
+      exit 0
+    fi
+
+    echo "Usage: exenv erlang <subcommand> [args]"
+    echo "Subcommands: install <version>, --list, global <version>, local <version>, uninstall <version>"
+    exit 1
+    ;;
+
   exec)
     COMMAND_NAME="$2"
     shift 2
@@ -364,6 +560,7 @@ case "$1" in
     echo "  install --list       - Lists available remote Elixir versions"
     echo "  versions             - Lists installed versions"
     echo "  list-remote          - Alias for 'install --list'"
+    echo "  erlang <subcommand>  - Manage Erlang/OTP versions"
     echo "  uninstall <version>  - Removes an installed Elixir version"
     echo "  global <version>     - Sets the global version"
     echo "  local <version>      - Sets the local version (for the current directory)"
